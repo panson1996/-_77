@@ -27,6 +27,22 @@ jobs:
       - name: Run unit tests
         run: python -m unittest discover -s tests -v
 
+      # 打包前在真 Mac 环境验证应用能正常启动（离屏渲染，截图存证）。
+      # 设为非阻塞：即使 WebEngine 在无显示器环境渲染受限，也不耽误出包。
+      - name: Smoke test app launch
+        continue-on-error: true
+        run: |
+          QT_QPA_PLATFORM=offscreen python main.py --smoke-test --screenshot /tmp/matrixdesk-smoke.png
+          ls -la /tmp/matrixdesk-smoke.png
+
+      - name: Upload smoke screenshot
+        if: always()
+        continue-on-error: true
+        uses: actions/upload-artifact@v4
+        with:
+          name: smoke-screenshot
+          path: /tmp/matrixdesk-smoke.png
+
       - name: Build .app bundle
         # macOS 下 --add-data 的分隔符是冒号（Windows 是分号）
         run: |

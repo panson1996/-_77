@@ -61,6 +61,24 @@ jobs:
             -srcfolder dist/MatrixDesk.app \
             -ov -format UDZO "MatrixDesk-macOS-arm64.dmg"
 
+      # 真机验证打包产物：挂载 DMG，从镜像内直接启动 .app 做冒烟测试。
+      # 这是阻塞步骤——产物启动不了就不发布。
+      - name: Verify packaged app from DMG
+        run: |
+          hdiutil attach MatrixDesk-macOS-arm64.dmg -nobrowse -mountpoint /tmp/mdmount
+          QT_QPA_PLATFORM=offscreen /tmp/mdmount/MatrixDesk.app/Contents/MacOS/MatrixDesk \
+            --smoke-test --screenshot /tmp/packaged-smoke.png
+          ls -la /tmp/packaged-smoke.png
+          hdiutil detach /tmp/mdmount
+
+      - name: Upload packaged-app screenshot
+        if: always()
+        continue-on-error: true
+        uses: actions/upload-artifact@v4
+        with:
+          name: packaged-app-screenshot
+          path: /tmp/packaged-smoke.png
+
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:

@@ -1,0 +1,56 @@
+name: Build macOS
+
+# 云端 macOS 打包：Actions 页面手动触发，或推送 v* 标签时自动触发。
+# 产物为 MatrixDesk-macOS-arm64.dmg（Apple Silicon；暂不含 Intel Mac 版本）。
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build-macos:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.14
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.14'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pyinstaller==6.22.3 -r requirements.txt
+
+      - name: Run unit tests
+        run: python -m unittest discover -s tests -v
+
+      - name: Build .app bundle
+        # macOS 下 --add-data 的分隔符是冒号（Windows 是分号）
+        run: |
+          python -m PyInstaller --noconfirm --windowed --name MatrixDesk \
+            --add-data "qml:qml" \
+            --add-data "assets:assets" \
+            main.py
+
+      - name: Package DMG
+        run: |
+          hdiutil create -volname "MatrixDesk" \
+            -srcfolder dist/MatrixDesk.app \
+            -ov -format UDZO "MatrixDesk-macOS-arm64.dmg"
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: MatrixDesk-macOS-arm64
+          path: MatrixDesk-macOS-arm64.dmg
+          if-no-files-found: error
+
+      # 推送 v* 标签时，把 DMG 附到 GitHub Release，方便同事直接下载
+      - name: Attach to Release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: MatrixDesk-macOS-arm64.dmg

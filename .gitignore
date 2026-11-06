@@ -1,0 +1,22 @@
+__pycache__/
+*.py[cod]
+.venv/
+.test-data/
+.debug-data/
+.browser-test-data/
+.session-test/
+.account-switch-test/
+.platform-switch-test/
+.ux-state-test/
+.channels-test/
+.nickname-test/
+artifacts/
+build/
+dist/
+dist-debug/
+cache/
+debug_qml.py
+image.png
+accounts.sqlite3*
+profiles/
+NVIDIA Corporation/
